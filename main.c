@@ -22,7 +22,10 @@ void ler_string(char *buffer, int tamanho) {
 void exibir_menu_principal() {
     printf("\n=== Sistema de Gerenciamento de Pacientes ===\n");
     printf("1 - Consultar paciente\n");
-    printf("2 - Imprimir lista de pacientes\n");
+    printf("2 - Atualizar paciente\n");
+    printf("3 - Remover paciente\n");
+    printf("4 - Inserir paciente\n");
+    printf("5 - Imprimir lista de pacientes\n");
     printf("Q - Sair\n");
     printf("Escolha uma opção: ");
 }
@@ -97,7 +100,7 @@ int main() {
                 executar_consulta(bd);
                 break;
                 
-            case '2':
+            case '5':
                 printf("\n");
                 bd_paciente_listar_todos(bd);
                 printf("\nPressione Enter para continuar...");

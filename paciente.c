@@ -1,7 +1,16 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include "paciente.h"
+
+struct paciente {
+    int id;
+    char cpf[MAX_CPF];
+    char nome[MAX_NOME];
+    int idade;
+    char data_cadastro[MAX_DATA];
+};
 
 /**
  * Função para converter o nome para minúsculo
@@ -36,8 +45,85 @@ static void converter_cpf_apenas_numeros(const char* original, char* destino){
     destino[j] = '\0';
 }
 
+Paciente* paciente_create() {
+    Paciente *p = (Paciente*)malloc(sizeof(Paciente));
+    if (p == NULL) {
+        return NULL;
+    }
+    
+    // Inicializa com valores padrão
+    p->id = 0;
+    p->cpf[0] = '\0';
+    p->nome[0] = '\0';
+    p->idade = 0;
+    p->data_cadastro[0] = '\0';
+    
+    return p;
+}
+
+void paciente_free(Paciente *p) {
+    if (p != NULL) {
+        free(p);
+    }
+}
+
+// Funções de acesso (getters)
+int paciente_get_id(const Paciente *p) {
+    return (p != NULL) ? p->id : 0;
+}
+
+const char* paciente_get_cpf(const Paciente *p) {
+    return (p != NULL) ? p->cpf : "";
+}
+
+const char* paciente_get_nome(const Paciente *p) {
+    return (p != NULL) ? p->nome : "";
+}
+
+int paciente_get_idade(const Paciente *p) {
+    return (p != NULL) ? p->idade : 0;
+}
+
+const char* paciente_get_data_cadastro(const Paciente *p) {
+    return (p != NULL) ? p->data_cadastro : "";
+}
+
+// Funções de modificação (setters)
+void paciente_set_id(Paciente *p, int id) {
+    if (p != NULL) {
+        p->id = id;
+    }
+}
+
+void paciente_set_cpf(Paciente *p, const char *cpf) {
+    if (p != NULL && cpf != NULL) {
+        strncpy(p->cpf, cpf, MAX_CPF - 1);
+        p->cpf[MAX_CPF - 1] = '\0';
+    }
+}
+
+void paciente_set_nome(Paciente *p, const char *nome) {
+    if (p != NULL && nome != NULL) {
+        strncpy(p->nome, nome, MAX_NOME - 1);
+        p->nome[MAX_NOME - 1] = '\0';
+    }
+}
+
+void paciente_set_idade(Paciente *p, int idade) {
+    if (p != NULL) {
+        p->idade = idade;
+    }
+}
+
+void paciente_set_data_cadastro(Paciente *p, const char *data_cadastro) {
+    if (p != NULL && data_cadastro != NULL) {
+        strncpy(p->data_cadastro, data_cadastro, MAX_DATA - 1);
+        p->data_cadastro[MAX_DATA - 1] = '\0';
+    }
+}
+
 void paciente_imprimir_cabecalho() {
-    printf("%-3s %-15s %-20s %-5s %-12s\n", "ID", "CPF", "Nome", "Idade", "Data_Cadastro"); // id: 3 espaços, cpf: 15 espaços, nome:20 espaços, idade: 5 espaços, data de cadastro: 12 espaços
+    printf("%-3s %-15s %-20s %-5s %-12s\n", "ID", "CPF", "Nome", "Idade", "Data_Cadastro");
     printf("%-3s %-15s %-20s %-5s %-12s\n", "---", "---------------", "--------------------", "-----", "------------");
 }
 
