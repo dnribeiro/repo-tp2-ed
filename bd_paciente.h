@@ -88,4 +88,12 @@ Paciente* bd_paciente_buscar_por_id(const BDPaciente *bd, int id);
  */
 int bd_paciente_maior_id(const BDPaciente *bd);
 
+/**
+ * Salva os dados do banco de dados para o arquivo CSV
+ * @param bd Ponteiro para o banco de dados
+ * @param nome_arquivo Nome do arquivo CSV
+ * @return 1 se sucesso, 0 se erro
+ */
+int bd_paciente_salvar_arquivo(const BDPaciente *bd, const char *nome_arquivo);
+
 #endif
