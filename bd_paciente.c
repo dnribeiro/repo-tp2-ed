@@ -5,12 +5,19 @@
 #include "paciente.h"
 
 /**
- * Estrutura que representa o banco de dados de pacientes
+ * Estrutura do nó da linked list
  */
-struct bdpaciente{
-    Paciente **pacientes;  // Vetor de ponteiros para pacientes
-    int total;            // Número atual de pacientes
-    int capacidade;       // Capacidade máxima
+typedef struct no_paciente {
+    Paciente *paciente;
+    struct no_paciente *proximo;
+} NoPaciente;
+
+/**
+ * Estrutura que representa o banco de dados de pacientes (linked list de pacientes)
+ */
+struct bdpaciente {
+    NoPaciente *primeiro;  // Primeiro nó da lista
+    int total;             // Contador de pacientes
 };
 
 BDPaciente* bd_paciente_create() {
@@ -20,37 +27,58 @@ BDPaciente* bd_paciente_create() {
         return NULL;
     }
     
-    bd->pacientes = (Paciente**)malloc(MAX_PACIENTES * sizeof(Paciente*));
-    if (bd->pacientes == NULL) {
-        printf("Erro: Não foi possível alocar memória para os pacientes.\n");
-        free(bd);
-        return NULL;
-    }
-    
-    // Inicializa todos os ponteiros como NULL
-    for (int i = 0; i < MAX_PACIENTES; i++) {
-        bd->pacientes[i] = NULL;
-    }
-    
+    bd->primeiro = NULL;
     bd->total = 0;
-    bd->capacidade = MAX_PACIENTES;
     
     return bd;
 }
 
 void bd_paciente_free(BDPaciente *bd) {
-    if (bd != NULL) {
-        if (bd->pacientes != NULL) {
-            // Libera cada paciente individualmente
-            for (int i = 0; i < bd->total; i++) {
-                if (bd->pacientes[i] != NULL) {
-                    paciente_free(bd->pacientes[i]);
-                }
-            }
-            free(bd->pacientes);
-        }
-        free(bd);
+    if (bd == NULL) {
+        return;
     }
+    
+    NoPaciente *atual = bd->primeiro;
+    while (atual != NULL) {
+        NoPaciente *proximo = atual->proximo;
+        paciente_free(atual->paciente);
+        free(atual);
+        atual = proximo;
+    }
+    
+    free(bd);
+}
+
+/**
+ * Função auxiliar para inserir paciente no final da lista
+ */
+int bd_paciente_inserir(BDPaciente *bd, Paciente *p) {
+    if (bd == NULL || p == NULL) {
+        return 0;
+    }
+    
+    NoPaciente *novo_no = (NoPaciente*)malloc(sizeof(NoPaciente));
+    if (novo_no == NULL) {
+        return 0;
+    }
+    
+    novo_no->paciente = p;
+    novo_no->proximo = NULL;
+    
+    // Se a lista está vazia
+    if (bd->primeiro == NULL) {
+        bd->primeiro = novo_no;
+    } else {
+        // Encontra o último nó
+        NoPaciente *atual = bd->primeiro;
+        while (atual->proximo != NULL) {
+            atual = atual->proximo;
+        }
+        atual->proximo = novo_no;
+    }
+    
+    bd->total++;
+    return 1;
 }
 
 /**
@@ -103,9 +131,10 @@ int bd_paciente_carregar_arquivo(BDPaciente *bd, const char *nome_arquivo) {
     
     char linha[512];
     int primeira_linha = 1;
+    int pacientes_carregados = 0;
     
     // lê linha por linha
-    while (fgets(linha, sizeof(linha), arquivo) && bd->total < bd->capacidade) {
+    while (fgets(linha, sizeof(linha), arquivo)) {
         // pula a primeira linha (cabeçalho)
         if (primeira_linha) {
             primeira_linha = 0;
@@ -125,8 +154,11 @@ int bd_paciente_carregar_arquivo(BDPaciente *bd, const char *nome_arquivo) {
         
         // faz o parsing da linha
         if (parsear_linha_csv(linha_copia, novo_paciente)) {
-            bd->pacientes[bd->total] = novo_paciente;
-            bd->total++;
+            if (bd_paciente_inserir(bd, novo_paciente)) {
+                pacientes_carregados++;
+            } else {
+                paciente_free(novo_paciente);
+            }
         } else {
             // Se falhou no parsing, libera o paciente criado
             paciente_free(novo_paciente);
@@ -134,7 +166,7 @@ int bd_paciente_carregar_arquivo(BDPaciente *bd, const char *nome_arquivo) {
     }
     
     fclose(arquivo);
-    printf("Banco de dados carregado com sucesso! %d pacientes encontrados.\n", bd->total);
+    printf("Banco de dados carregado com sucesso! %d pacientes encontrados.\n", pacientes_carregados);
     return 1;
 }
 
@@ -143,22 +175,29 @@ void bd_paciente_consultar_por_nome(const BDPaciente *bd, const char *nome_prefi
         return;
     }
     
-    int encontrados = 0;
+    printf("Buscando pacientes com nome que começa com '%s'...\n", nome_prefixo);
     
-    for (int i = 0; i < bd->total; i++) {
-        if (paciente_nome_comeca_com(bd->pacientes[i], nome_prefixo)) {
-            if (encontrados == 0) {
+    int contador = 0;
+    int primeira_impressao = 1;
+    
+    // Itera pela lista ligada
+    NoPaciente *atual = bd->primeiro;
+    while (atual != NULL) {
+        if (paciente_nome_comeca_com(atual->paciente, nome_prefixo)) {
+            if (primeira_impressao) {
                 paciente_imprimir_cabecalho();
+                primeira_impressao = 0;
             }
-            paciente_imprimir(bd->pacientes[i]);
-            encontrados++;
+            paciente_imprimir(atual->paciente);
+            contador++;
         }
+        atual = atual->proximo;
     }
     
-    if (encontrados == 0) {
+    if (contador == 0) {
         printf("Nenhum paciente encontrado com o nome que começa com '%s'.\n", nome_prefixo);
     } else {
-        printf("\n%d paciente(s) encontrado(s).\n", encontrados);
+        printf("\n%d paciente(s) encontrado(s).\n", contador);
     }
 }
 
@@ -167,22 +206,28 @@ void bd_paciente_consultar_por_cpf(const BDPaciente *bd, const char *cpf_prefixo
         return;
     }
     
-    int encontrados = 0;
+    printf("Buscando pacientes com CPF que começa com '%s'...\n", cpf_prefixo);
     
-    for (int i = 0; i < bd->total; i++) {
-        if (paciente_cpf_comeca_com(bd->pacientes[i], cpf_prefixo)) {
-            if (encontrados == 0) {
+    int contador = 0;
+    int primeira_impressao = 1;
+    
+    NoPaciente *atual = bd->primeiro;
+    while (atual != NULL) {
+        if (paciente_cpf_comeca_com(atual->paciente, cpf_prefixo)) {
+            if (primeira_impressao) {
                 paciente_imprimir_cabecalho();
+                primeira_impressao = 0;
             }
-            paciente_imprimir(bd->pacientes[i]);
-            encontrados++;
+            paciente_imprimir(atual->paciente);
+            contador++;
         }
+        atual = atual->proximo;
     }
     
-    if (encontrados == 0) {
+    if (contador == 0) {
         printf("Nenhum paciente encontrado com CPF que começa com '%s'.\n", cpf_prefixo);
     } else {
-        printf("\n%d paciente(s) encontrado(s).\n", encontrados);
+        printf("\n%d paciente(s) encontrado(s).\n", contador);
     }
 }
 
@@ -191,7 +236,7 @@ void bd_paciente_listar_todos(const BDPaciente *bd) {
         return;
     }
     
-    if (bd->total == 0) {
+    if (bd->primeiro == NULL) {
         printf("Nenhum paciente cadastrado no sistema.\n");
         return;
     }
@@ -199,8 +244,10 @@ void bd_paciente_listar_todos(const BDPaciente *bd) {
     printf("Imprimindo lista de pacientes...\n");
     paciente_imprimir_cabecalho();
     
-    for (int i = 0; i < bd->total; i++) {
-        paciente_imprimir(bd->pacientes[i]);
+    NoPaciente *atual = bd->primeiro;
+    while (atual != NULL) {
+        paciente_imprimir(atual->paciente);
+        atual = atual->proximo;
     }
     
     printf("\nTotal: %d paciente(s).\n", bd->total);
@@ -208,4 +255,107 @@ void bd_paciente_listar_todos(const BDPaciente *bd) {
 
 int bd_paciente_total(const BDPaciente *bd) {
     return (bd != NULL) ? bd->total : 0;
+}
+
+
+// função para remover um paciente por ID
+int bd_paciente_remover_por_id(BDPaciente *bd, int id) {
+    if (bd == NULL) {
+        return 0;
+    }
+    
+    NoPaciente *atual = bd->primeiro;
+    NoPaciente *anterior = NULL;
+    
+    while (atual != NULL) {
+        if (paciente_get_id(atual->paciente) == id) {
+            // remove o nó da lista
+            if (anterior == NULL) {
+                // é o primeiro nó
+                bd->primeiro = atual->proximo;
+            } else {
+                anterior->proximo = atual->proximo;
+            }
+            
+            // libera memória
+            paciente_free(atual->paciente);
+            free(atual);
+            bd->total--;
+            return 1;
+        }
+        
+        anterior = atual;
+        atual = atual->proximo;
+    }
+    
+    return 0; // paciente não encontrado
+}
+
+// Função para buscar um paciente por ID
+Paciente* bd_paciente_buscar_por_id(const BDPaciente *bd, int id) {
+    if (bd == NULL) {
+        return NULL;
+    }
+    
+    NoPaciente *atual = bd->primeiro;
+    while (atual != NULL) {
+        if (paciente_get_id(atual->paciente) == id) {
+            return atual->paciente;
+        }
+        atual = atual->proximo;
+    }
+    
+    return NULL;
+}
+
+// função para encontrar o maior ID existente
+int bd_paciente_maior_id(const BDPaciente *bd) {
+    if (bd == NULL || bd->primeiro == NULL) {
+        return 0;
+    }
+    
+    int maior_id = 0;
+    NoPaciente *atual = bd->primeiro;
+    
+    while (atual != NULL) {
+        int id_atual = paciente_get_id(atual->paciente);
+        if (id_atual > maior_id) {
+            maior_id = id_atual;
+        }
+        atual = atual->proximo;
+    }
+    
+    return maior_id;
+}
+
+// função para salvar dados no arquivo CSV
+int bd_paciente_salvar_arquivo(const BDPaciente *bd, const char *nome_arquivo) {
+    if (bd == NULL || nome_arquivo == NULL) {
+        return 0;
+    }
+    
+    FILE *arquivo = fopen(nome_arquivo, "w");
+    if (arquivo == NULL) {
+        printf("Erro: Não foi possível criar/abrir o arquivo %s para escrita.\n", nome_arquivo);
+        return 0;
+    }
+    
+    // cabeçalho
+    fprintf(arquivo, "ID,CPF,Nome,Idade,Data_Cadastro\n");
+    
+    // dados dos pacientes
+    NoPaciente *atual = bd->primeiro;
+    while (atual != NULL) {
+        fprintf(arquivo, "%d,%s,%s,%d,%s\n",
+                paciente_get_id(atual->paciente),
+                paciente_get_cpf(atual->paciente),
+                paciente_get_nome(atual->paciente),
+                paciente_get_idade(atual->paciente),
+                paciente_get_data_cadastro(atual->paciente));
+        atual = atual->proximo;
+    }
+    
+    fclose(arquivo);
+    printf("Dados salvos no arquivo %s com sucesso!\n", nome_arquivo);
+    return 1;
 }

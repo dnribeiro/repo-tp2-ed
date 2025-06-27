@@ -3,7 +3,6 @@
 
 #include "paciente.h"
 
-#define MAX_PACIENTES 20
 #define NOME_ARQUIVO "bd_paciente.csv"
 
 /**
@@ -57,5 +56,36 @@ void bd_paciente_listar_todos(const BDPaciente *bd);
  * @return Número de pacientes
  */
 int bd_paciente_total(const BDPaciente *bd);
+
+/**
+ * Insere um novo paciente no banco de dados
+ * @param bd Ponteiro para o banco de dados
+ * @param p Ponteiro para o paciente a ser inserido
+ * @return 1 se sucesso, 0 se erro
+ */
+int bd_paciente_inserir(BDPaciente *bd, Paciente *p);
+
+/**
+ * Remove um paciente do banco de dados por ID
+ * @param bd Ponteiro para o banco de dados
+ * @param id ID do paciente a ser removido
+ * @return 1 se sucesso, 0 se não encontrado
+ */
+int bd_paciente_remover_por_id(BDPaciente *bd, int id);
+
+/**
+ * Busca um paciente por ID
+ * @param bd Ponteiro para o banco de dados
+ * @param id ID do paciente a ser buscado
+ * @return Ponteiro para o paciente se encontrado, NULL caso contrário
+ */
+Paciente* bd_paciente_buscar_por_id(const BDPaciente *bd, int id);
+
+/**
+ * Encontra o maior ID existente no banco de dados
+ * @param bd Ponteiro para o banco de dados
+ * @return Maior ID encontrado, ou 0 se não houver registros
+ */
+int bd_paciente_maior_id(const BDPaciente *bd);
 
 #endif
