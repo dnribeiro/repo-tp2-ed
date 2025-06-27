@@ -1,53 +1,54 @@
+
 # HealthSys - Sistema de Gerenciamento de Pacientes
 
 ## Descrição
 
-O repositório contém um sistema simplificado de gerenciamento de dados de pacientes desenvolvido em linguagem C. O sistema permite consultar e listar registros de pacientes armazenados em um arquivo CSV.
+HealthSys é um sistema simplificado de gerenciamento de dados de pacientes de uma clínica, desenvolvido em linguagem C. Os dados são armazenados em um arquivo `.csv` e carregados para uma estrutura de **lista encadeada** em memória, representada pelo TAD `BDPaciente`. O sistema permite **inserir**, **consultar**, **atualizar**, **remover** e **listar** pacientes.
+
+Este projeto foi desenvolvido como parte do **Trabalho Prático 2** da disciplina de Programação, no curso de Sistemas de Informação do IFES - Campus Serra.
 
 ## Estrutura do Projeto
 
 ```
-tp1/
+tp2/
 ├── Makefile              # Arquivo de compilação
-├── README.md            # Documentação do projeto
-├── bd_paciente.csv      # Arquivo de dados dos pacientes
-├── main.c               # Programa principal
-├── paciente.h           # Definições da estrutura Paciente
-├── paciente.c           # Implementação das funções de Paciente
-├── bd_paciente.h        # Definições do TAD BDPaciente
-└── bd_paciente.c        # Implementação do TAD BDPaciente
+├── README.md             # Documentação do projeto
+├── bd_paciente.csv       # Arquivo de dados dos pacientes (persistência)
+├── main.c                # Programa principal (interface de usuário)
+├── paciente.h/.c         # TAD Paciente
+├── bd_paciente.h/.c      # TAD BDPaciente (banco de dados em memória)
 ```
 
 ## Como Executar
 
 ### Pré-requisitos
 - GCC (GNU Compiler Collection)
-- Sistema Linux (testado no Ubuntu 24.04)
+- Linux (testado em Ubuntu 22.04 e 24.04)
 - Make (opcional, mas recomendado)
 
 ### Compilação
 
-#### Usando Makefile (recomendado):
+#### Usando Makefile:
 ```bash
 make
 ```
 
 #### Compilação manual:
 ```bash
-gcc -Wall main.c paciente.c bd_paciente.c -o tp1
+gcc -Wall main.c paciente.c bd_paciente.c -o tp2
 ```
 
-### Execução
+### Execução:
 ```bash
-./tp1
+./tp2
 ```
 
-Ou usando o Makefile:
+Ou com Make:
 ```bash
 make run
 ```
 
-### Limpeza dos Arquivos Compilados
+### Limpeza dos arquivos compilados:
 ```bash
 make clean
 ```
@@ -55,24 +56,41 @@ make clean
 ## Funcionalidades
 
 ### 1. Consultar Paciente
-- **Busca por Nome**: Permite buscar pacientes cujo nome comece com um prefixo específico
-- **Busca por CPF**: Permite buscar pacientes cujo CPF comece com um prefixo específico
-- A busca por nome é case-insensitive
-- Retorna todos os registros que correspondam ao prefixo informado
+- **Por Nome** (case-insensitive)
+- **Por CPF** (considerando apenas os números)
+- Permite busca por **prefixo**
 
-### 2. Listar Todos os Pacientes
-- Exibe todos os pacientes cadastrados no sistema
-- Apresenta os dados organizados em formato tabular
-- Mostra o total de pacientes encontrados
+### 2. Atualizar Paciente
+- Busca o paciente por meio de uma consulta.
+- Permite modificar CPF, nome ou idade.
+- Data de cadastro se mantém.
+- Campos podem ser mantidos usando o caractere `-`.
+
+### 3. Remover Paciente
+- Permite localizar um paciente via consulta.
+- Exige confirmação antes de excluir o registro.
+- Remove definitivamente da memória e do CSV.
+
+### 4. Inserir Paciente
+- Solicita CPF (11 dígitos), nome e idade.
+- Gera `ID` automaticamente.
+- Data de cadastro é preenchida com a data atual.
+- Exibe confirmação antes de inserir.
+
+### 5. Listar Todos os Pacientes
+- Exibe todos os registros formatados em tabela.
+- Mostra o total de pacientes.
+
+### 6. Sair
+- Salva automaticamente o estado atual no arquivo CSV.
 
 ## TADs (Tipos Abstratos de Dados)
 
-### 1. Paciente
-**Arquivo**: `paciente.h` / `paciente.c`
+### 1. Paciente (`paciente.h` / `paciente.c`)
 
-**Estrutura**:
+**Campos**:
 ```c
-typedef struct {
+typedef struct paciente {
     int id;
     char cpf[MAX_CPF];
     char nome[MAX_NOME];
@@ -82,51 +100,70 @@ typedef struct {
 ```
 
 **Responsabilidades**:
-- Representar um paciente individual
-- Formatação e impressão de dados do paciente
-- Operações de comparação (nome e CPF com prefixo)
+- Representar um paciente individual.
+- Getters e setters.
+- Impressão formatada.
+- Comparação por prefixo (nome e CPF).
 
-### 2. BDPaciente
-**Arquivo**: `bd_paciente.h` / `bd_paciente.c`
+### 2. BDPaciente (`bd_paciente.h` / `bd_paciente.c`)
 
-**Estrutura**:
+**Representação**:
 ```c
-typedef struct {
-    Paciente *pacientes;  // Vetor de pacientes
-    int total;           // Número atual de pacientes
-    int capacidade;      // Capacidade máxima
+typedef struct bdpaciente {
+    NoPaciente *primeiro;
+    int total;
 } BDPaciente;
 ```
 
-**Responsabilidades**:
-- Gerenciar a coleção de pacientes
-- Carregar dados do arquivo CSV
-- Operações de consulta e listagem
-- Gerenciamento de memória dinâmica
+**Funcionalidades**:
+- Carregamento e salvamento no CSV.
+- Inserção, consulta, atualização e remoção.
+- Contagem de pacientes.
+- Busca por ID ou prefixo.
+- Lista encadeada simples como estrutura base.
 
 ## Principais Decisões de Implementação
 
 ### 1. Estrutura de Dados
-- **Vetor Dinâmico**: Utilizado array alocado dinamicamente para armazenar os pacientes
-- **Capacidade Fixa**: Definida como 20 pacientes (MAX_PACIENTES)
-- **Modularização**: Separação clara entre a estrutura Paciente e o gerenciador BDPaciente
+- **Lista encadeada** para armazenar pacientes em memória.
+- Cada nó contém um ponteiro para `Paciente` e para o próximo nó.
+- Implementação robusta com alocação e desalocação de memória.
 
-### 2. Manipulação de Arquivos
-- **Parsing Manual**: Implementação própria para leitura do CSV usando `strtok()`
-- **Validação**: Verificação da integridade dos dados durante o carregamento
-- **Tratamento de Erros**: Mensagens informativas em caso de problemas
+### 2. Modularização
+- TADs distintos para `Paciente` e `BDPaciente`.
+- `main.c` contém a interface de usuário.
+- Separação de responsabilidades clara entre os arquivos.
 
-### 3. Busca por Prefixo
-- **Nome**: Busca case-insensitive usando conversão para minúsculas
-- **CPF**: Busca considerando apenas numeros, sendo desnecessário a inclusão de pontos e hífens na busca por CPF.
-- **Algoritmo**: Uso de `strncmp()` para comparação eficiente
+### 3. Manipulação de Arquivos
+- Leitura e escrita do CSV com `fgets` e `strtok`.
+- Cabeçalho do CSV é ignorado na leitura e reescrito na gravação.
+- Dados são persistidos automaticamente após alterações.
 
-### 4. Interface do Usuário
-- **Menu Hierárquico**: Menu principal com submenu de consultas
-- **Entrada Robusta**: Limpeza de buffer e tratamento de entrada inválida
-- **Feedback Claro**: Mensagens informativas sobre resultados das operações
+### 4. Interface e Interação com Usuário
+- Menus claros e informativos.
+- Confirmações de ações críticas (inserção, atualização, remoção).
+- Entradas robustas com validação e limpeza de buffer.
+- Formatação amigável de CPF e datas.
 
-### 5. Gerenciamento de Memória
-- **Alocação Dinâmica**: Uso de `malloc()` para flexibilidade
-- **Liberação Adequada**: Função `bd_paciente_free()` para evitar vazamentos
-- **Verificação de Erros**: Validação de erros de alocação, evitando que o programa rode com estruturas mal alocadas.
+### 5. Validação e Robustez
+- CPF deve ter exatamente 11 dígitos numéricos.
+- Idade deve ser positiva.
+- Nome não pode ser vazio.
+- Entradas inválidas são tratadas com mensagens amigáveis.
+
+## Exemplo de Execução
+
+```text
+=== Sistema de Gerenciamento de Pacientes ===
+1 - Consultar paciente
+2 - Atualizar paciente
+3 - Remover paciente
+4 - Inserir paciente
+5 - Imprimir lista de pacientes
+Q - Sair
+Escolha uma opção:
+```
+
+## Considerações Finais
+
+Este sistema atende aos requisitos descritos no TP2, incluindo todas as funcionalidades essenciais: consulta, inserção, atualização, remoção e listagem de pacientes. A estrutura baseada em **lista encadeada** permite flexibilidade e dinamismo no gerenciamento dos dados, com modularização e documentação adequadas para manutenção e evolução futura do sistema.
