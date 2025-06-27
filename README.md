@@ -163,7 +163,3 @@ typedef struct bdpaciente {
 Q - Sair
 Escolha uma opção:
 ```
-
-## Considerações Finais
-
-Este sistema atende aos requisitos descritos no TP2, incluindo todas as funcionalidades essenciais: consulta, inserção, atualização, remoção e listagem de pacientes. A estrutura baseada em **lista encadeada** permite flexibilidade e dinamismo no gerenciamento dos dados, com modularização e documentação adequadas para manutenção e evolução futura do sistema.
