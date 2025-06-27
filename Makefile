@@ -3,7 +3,7 @@ CC = gcc
 CFLAGS = -Wall 
 
 # Nome do executável
-TARGET = tp1
+TARGET = tp2
 
 # Arquivos fonte
 SOURCES = main.c paciente.c bd_paciente.c
